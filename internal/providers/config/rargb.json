@@ -1,0 +1,18 @@
+{
+    "name": "rargb",
+    "enabled": true,
+    "type": "html",
+    "debug": false,
+    "url": "https://rargb.to",
+    "searchUrl": "/search/?search={query}",
+    "itemSelector": "tr.lista2",
+    "itemsSelector": {
+        "detail_url": "td.lista:nth-child(2) a",
+        "title": "td.lista a[title]",
+        "size": "td:nth-child(5)",
+        "seeds": "td:nth-child(6)",
+        "peers": "td:nth-child(7)",
+        "magnetPreffixLink": "torrent",
+        "magnetSelector": "a[href*=magnet]"
+    }
+}

@@ -1,0 +1,18 @@
+{
+    "name": "LimeTorrents",
+    "enabled": true,
+    "type": "html",
+    "debug": false,
+    "url": "https://limetorrents.lol",
+    "searchUrl": "/search/all/{query}",
+    "itemSelector": "table.table2 tr[bgcolor]",
+    "itemsSelector": {
+        "detail_url": "td.tdleft div.tt-name a:nth-of-type(2)",
+        "title": "td.tdleft",
+        "size": "td:nth-child(3)",
+        "seeds": "td.tdseed",
+        "peers": "td.tdleech",
+        "magnetPreffixLink": "torrent",
+        "magnetSelector": "a[href*=magnet]"
+    }
+}
