@@ -5,7 +5,7 @@
     "debug": false,
     "url": "https://limetorrents.lol",
     "searchUrl": "/search/all/{query}",
-    "itemSelector": "table.table2 tr[bgcolor]",
+    "itemSelector": ".table2 tr[bgcolor]",
     "itemsSelector": {
         "detail_url": "td.tdleft div.tt-name a:nth-of-type(2)",
         "title": "td.tdleft",

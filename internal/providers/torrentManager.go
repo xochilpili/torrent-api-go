@@ -7,6 +7,7 @@ import (
 	"io/fs"
 	"os"
 	"path/filepath"
+	"strings"
 	"sync"
 
 	"github.com/rs/zerolog"
@@ -121,7 +122,7 @@ func (p *TorrentManager) FetchAllActive(ctx context.Context, params SearchParams
 		}(ctx, conf, params)
 	}
 	wg.Wait()
-	return items, nil
+	return p.postFilter(items, params), nil
 }
 
 func (p *TorrentManager) FetchByProvider(ctx context.Context, provider string, params SearchParams) ([]*TorrentItem, error) {
@@ -133,5 +134,36 @@ func (p *TorrentManager) FetchByProvider(ctx context.Context, provider string, p
 	torrentProvider := NewTorrentProvider(cfg, p.logger)
 
 	torrents := torrentProvider.FetchAndParse(ctx, params)
-	return torrents, nil
+	return p.postFilter(torrents, params), nil
+}
+
+func (p *TorrentManager) postFilter(items []*TorrentItem, params SearchParams) []*TorrentItem {
+	var filtered []*TorrentItem
+	p.logger.Info().Msgf("Total items received to be filtered: %d", len(items))
+	for _, item := range items {
+
+		if params.Filters.Group != "" && !strings.Contains(item.Group, params.Filters.Group) && !strings.Contains(strings.ToLower(item.OriginalTitle), params.Filters.Group) {
+			fmt.Printf("Filtering didn't match: %s, %s, %s\n", params.Filters.Group, item.Group, item.OriginalTitle)
+			continue
+		}
+
+		if params.Filters.Resolution == "" {
+			filtered = append(filtered, item)
+			continue
+		}
+
+		var torrents []Torrent
+		for _, torrent := range item.Torrents {
+			if strings.Contains(strings.ToLower(torrent.Resolution), strings.ToLower(params.Filters.Resolution)) {
+				torrents = append(torrents, torrent)
+			}
+		}
+
+		if len(torrents) > 0 {
+			item.Torrents = torrents
+			filtered = append(filtered, item)
+		}
+	}
+	p.logger.Info().Msgf("Total filtered: %d", len(filtered))
+	return filtered
 }

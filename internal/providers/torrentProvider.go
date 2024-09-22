@@ -8,6 +8,7 @@ import (
 	"net/url"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/go-resty/resty/v2"
@@ -54,6 +55,11 @@ func (t *TorrentProvider) fetchByScrappe(ctx context.Context, params SearchParam
 
 	t.c.Limit(&colly.LimitRule{Parallelism: 2, RandomDelay: 5 * time.Second})
 
+	itemSet := make(map[string]bool)
+	itemChan := make(chan *TorrentItem)
+	var wg sync.WaitGroup
+	var mu sync.Mutex
+
 	var items []*TorrentItem
 
 	t.c.OnHTML(t.config.ItemSelector, func(h *colly.HTMLElement) {
@@ -63,7 +69,9 @@ func (t *TorrentProvider) fetchByScrappe(ctx context.Context, params SearchParam
 		strPeers := h.ChildText(t.config.ItemsSelector.Peers)
 		size := h.ChildText(t.config.ItemsSelector.Size)
 
-		info, err := t.parseTorrentTitle(title)
+		parsedTitle := strings.ReplaceAll(title, " ", "-")
+
+		info, err := t.parseTorrentTitle(parsedTitle)
 		if err != nil {
 			t.logger.Panic().Err(err).Msg("Title parser error")
 		}
@@ -95,10 +103,10 @@ func (t *TorrentProvider) fetchByScrappe(ctx context.Context, params SearchParam
 		item := &TorrentItem{
 			Provider:      t.config.Name,
 			Type:          itemType,
-			Title:         info.Title,
+			Title:         strings.Trim(strings.ReplaceAll(info.Title, "-", " "), " "),
 			OriginalTitle: title,
 			Year:          info.Year,
-			Group:         info.Group,
+			Group:         strings.ToLower(info.Group),
 			Season:        info.Season,
 			Episode:       info.Episode,
 			Torrents:      []Torrent{torrent},
@@ -106,13 +114,25 @@ func (t *TorrentProvider) fetchByScrappe(ctx context.Context, params SearchParam
 
 		if strings.Contains(detailUrl, t.config.ItemsSelector.MagnetPreffixLink) {
 			baseUrl := fmt.Sprintf("%s%s", t.config.BaseUrl, detailUrl)
-			h.Request.Visit(baseUrl)
-			t.c.OnHTML(t.config.ItemsSelector.MagnetSelector, func(h *colly.HTMLElement) {
-				magnetStr := h.Attr("href")
-				item.Torrents[0].Magnet = magnetStr
-			})
+			wg.Add(1)
+			go func(link string, item *TorrentItem, itemChan chan<- *TorrentItem, wg *sync.WaitGroup) {
+				defer wg.Done()
+				c := colly.NewCollector()
+				c.OnHTML(t.config.ItemsSelector.MagnetSelector, func(h *colly.HTMLElement) {
+					magnetStr := h.Attr("href")
+					if magnetStr != "" {
+						if !itemSet[item.OriginalTitle] {
+							mu.Lock()
+							itemSet[item.OriginalTitle] = true
+							mu.Unlock()
+							item.Torrents[0].Magnet = magnetStr
+							itemChan <- item
+						}
+					}
+				})
+				c.Visit(link)
+			}(baseUrl, item, itemChan, &wg)
 		}
-		items = append(items, item)
 	})
 
 	if t.config.Debug {
@@ -126,24 +146,37 @@ func (t *TorrentProvider) fetchByScrappe(ctx context.Context, params SearchParam
 
 	t.c.Visit(baseUrl)
 	t.c.Wait()
-	t.logger.Info().Msgf("got %d results", len(items))
-	return t.postFilter(items, params)
+
+	go func() {
+		wg.Wait()
+		close(itemChan)
+	}()
+
+	for item := range itemChan {
+		items = append(items, item)
+	}
+
+	t.logger.Info().Msgf("Proiver: %s, got %d results", t.config.Name, len(items))
+	return items
 }
 
 func (t *TorrentProvider) fetchByApi(ctx context.Context, params SearchParams) []*TorrentItem {
-
 	baseUrl := fmt.Sprintf("%s%s", t.config.BaseUrl, strings.Replace(t.config.SearchUrl, "{query}", params.Query, 1))
 	t.logger.Info().Msgf("Fetch API: %s", baseUrl)
+
 	resp, err := t.rs.R().SetHeader("Content-Type", "application/json").SetContext(ctx).Get(baseUrl)
 	if err != nil {
 		t.logger.Panic().Err(err).Msgf("error while fetching: %s, %v", baseUrl, err)
 	}
+
 	items, err := t.transform2Item(resp.Body())
 	if err != nil {
 		t.logger.Panic().Err(err).Msg("error while transform object types")
 	}
-	t.logger.Info().Msgf("Got %d results", len(items))
-	return t.postFilter(items, params)
+
+	t.logger.Info().Msgf("Provider: %s, got %d results", t.config.Name, len(items))
+
+	return items
 }
 
 func (t *TorrentProvider) transform2Item(data []byte) ([]*TorrentItem, error) {
@@ -178,7 +211,7 @@ func (t *TorrentProvider) transform2Item(data []byte) ([]*TorrentItem, error) {
 				OriginalTitle: el.Name,
 				Type:          itemType,
 				Year:          info.Year,
-				Group:         info.Group,
+				Group:         strings.ToLower(info.Group),
 				Episode:       info.Episode,
 				Season:        info.Season,
 				Torrents: []Torrent{{
@@ -219,7 +252,7 @@ func (t *TorrentProvider) transform2Item(data []byte) ([]*TorrentItem, error) {
 				Title:         ytsItem.TitleEnglish,
 				OriginalTitle: ytsItem.Title,
 				Year:          ytsItem.Year,
-				Group:         "YTS",
+				Group:         "yts",
 				Torrents:      torrents,
 			}
 			items = append(items, item)
@@ -260,31 +293,4 @@ func (t *TorrentProvider) parseTorrentTitle(title string) (*parsetorrentname.Tor
 		return nil, err
 	}
 	return info, nil
-}
-
-func (t *TorrentProvider) postFilter(items []*TorrentItem, params SearchParams) []*TorrentItem {
-	var filtered []*TorrentItem
-	for _, item := range items {
-		if params.Filters.Group != "" && !strings.Contains(strings.ToLower(item.Group), strings.ToLower(params.Filters.Group)) {
-			continue
-		}
-
-		if params.Filters.Resolution == "" {
-			filtered = append(filtered, item)
-		}
-
-		var torrents []Torrent
-		for _, torrent := range item.Torrents {
-			if strings.Contains(strings.ToLower(torrent.Resolution), strings.ToLower(params.Filters.Resolution)) {
-				torrents = append(torrents, torrent)
-			}
-		}
-
-		if len(torrents) > 0 {
-			item.Torrents = torrents
-			filtered = append(filtered, item)
-		}
-	}
-
-	return filtered
 }

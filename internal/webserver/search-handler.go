@@ -24,11 +24,11 @@ func (w *WebServer) SearchAll(c *gin.Context) {
 	}
 
 	if res != "" {
-		params.Filters.Resolution = res
+		params.Filters.Resolution = strings.ToLower(res)
 	}
 
 	if group != "" {
-		params.Filters.Group = group
+		params.Filters.Group = strings.ToLower(group)
 	}
 
 	w.logger.Info().Msgf("searching %s with filters: %s", queryString, strings.Join([]string{params.Filters.Resolution, params.Filters.Group}, ","))
