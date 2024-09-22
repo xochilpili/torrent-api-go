@@ -1,9 +1,12 @@
 package providers
 
-type SearchParams struct {
-	Query      string
+type ParamFilters struct {
 	Group      string
 	Resolution string
+}
+type SearchParams struct {
+	Query   string
+	Filters ParamFilters
 }
 
 type Torrent struct {

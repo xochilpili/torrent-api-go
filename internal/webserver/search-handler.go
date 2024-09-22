@@ -16,19 +16,22 @@ func (w *WebServer) SearchAll(c *gin.Context) {
 	group := c.Query("group")
 
 	params := providers.SearchParams{
-		Query:      queryString,
-		Resolution: "",
-		Group:      "",
+		Query: queryString,
+		Filters: providers.ParamFilters{
+			Resolution: "",
+			Group:      "",
+		},
 	}
 
 	if res != "" {
-		params.Resolution = res
-	}
-	if group != "" {
-		params.Group = group
+		params.Filters.Resolution = res
 	}
 
-	w.logger.Info().Msgf("searching %s with filters: %s", queryString, strings.Join([]string{params.Resolution, params.Group}, ","))
+	if group != "" {
+		params.Filters.Group = group
+	}
+
+	w.logger.Info().Msgf("searching %s with filters: %s", queryString, strings.Join([]string{params.Filters.Resolution, params.Filters.Group}, ","))
 	torrents, err := w.manager.FetchAllActive(c.Request.Context(), params)
 	if err != nil {
 		w.logger.Err(err).Msgf("error while fetching torrents: %v", err)
@@ -46,20 +49,22 @@ func (w *WebServer) SearchByProvider(c *gin.Context) {
 	group := c.Query("group")
 
 	params := providers.SearchParams{
-		Query:      queryString,
-		Resolution: "",
-		Group:      "",
+		Query: queryString,
+		Filters: providers.ParamFilters{
+			Resolution: "",
+			Group:      "",
+		},
 	}
 
 	if res != "" {
-		params.Resolution = res
+		params.Filters.Resolution = res
 	}
 
 	if group != "" {
-		params.Group = group
+		params.Filters.Group = group
 	}
 
-	w.logger.Info().Msgf("searching %s to provider: %s with filters: %s", queryString, provider, strings.Join([]string{params.Group, params.Resolution}, ","))
+	w.logger.Info().Msgf("searching %s to provider: %s with filters: %s", queryString, provider, strings.Join([]string{params.Filters.Group, params.Filters.Resolution}, ","))
 	torrents, err := w.manager.FetchByProvider(c.Request.Context(), provider, params)
 
 	if err != nil {

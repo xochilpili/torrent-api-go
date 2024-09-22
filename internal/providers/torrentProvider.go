@@ -265,17 +265,17 @@ func (t *TorrentProvider) parseTorrentTitle(title string) (*parsetorrentname.Tor
 func (t *TorrentProvider) postFilter(items []*TorrentItem, params SearchParams) []*TorrentItem {
 	var filtered []*TorrentItem
 	for _, item := range items {
-		if params.Group != "" && !strings.Contains(item.Group, params.Group) {
+		if params.Filters.Group != "" && !strings.Contains(strings.ToLower(item.Group), strings.ToLower(params.Filters.Group)) {
 			continue
 		}
 
-		if params.Resolution == "" {
+		if params.Filters.Resolution == "" {
 			filtered = append(filtered, item)
 		}
 
 		var torrents []Torrent
 		for _, torrent := range item.Torrents {
-			if strings.Contains(torrent.Resolution, params.Resolution) {
+			if strings.Contains(strings.ToLower(torrent.Resolution), strings.ToLower(params.Filters.Resolution)) {
 				torrents = append(torrents, torrent)
 			}
 		}
