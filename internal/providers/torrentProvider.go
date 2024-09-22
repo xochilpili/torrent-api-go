@@ -126,9 +126,8 @@ func (t *TorrentProvider) fetchByScrappe(ctx context.Context, params SearchParam
 
 	t.c.Visit(baseUrl)
 	t.c.Wait()
-
-	//return t.postFilter(items, params)
-	return items
+	t.logger.Info().Msgf("got %d results", len(items))
+	return t.postFilter(items, params)
 }
 
 func (t *TorrentProvider) fetchByApi(ctx context.Context, params SearchParams) []*TorrentItem {
@@ -143,7 +142,7 @@ func (t *TorrentProvider) fetchByApi(ctx context.Context, params SearchParams) [
 	if err != nil {
 		t.logger.Panic().Err(err).Msg("error while transform object types")
 	}
-
+	t.logger.Info().Msgf("Got %d results", len(items))
 	return t.postFilter(items, params)
 }
 
@@ -264,35 +263,28 @@ func (t *TorrentProvider) parseTorrentTitle(title string) (*parsetorrentname.Tor
 }
 
 func (t *TorrentProvider) postFilter(items []*TorrentItem, params SearchParams) []*TorrentItem {
-	if params.Resolution == "" && params.Group == "" {
-		return items
-	}
-
-	// Filter parent items
 	var filtered []*TorrentItem
 	for _, item := range items {
-		if params.Group != "" {
-			if strings.Contains(item.Group, params.Group) {
-				filtered = append(filtered, item)
-			}
-		} else {
+		if params.Group != "" && !strings.Contains(item.Group, params.Group) {
+			continue
+		}
+
+		if params.Resolution == "" {
 			filtered = append(filtered, item)
 		}
-	}
-	// filter torrents inside parent items
-	for _, item := range filtered {
+
 		var torrents []Torrent
 		for _, torrent := range item.Torrents {
-			if params.Resolution != "" {
-				if strings.Contains(torrent.Resolution, params.Resolution) {
-					torrents = append(torrents, torrent)
-				}
+			if strings.Contains(torrent.Resolution, params.Resolution) {
+				torrents = append(torrents, torrent)
 			}
 		}
+
 		if len(torrents) > 0 {
 			item.Torrents = torrents
 			filtered = append(filtered, item)
 		}
 	}
+
 	return filtered
 }

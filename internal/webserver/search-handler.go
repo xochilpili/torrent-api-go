@@ -35,7 +35,7 @@ func (w *WebServer) SearchAll(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, &gin.H{"message": "error", "error": err})
 	}
 	w.logger.Info().Msgf("resolved %d torrents", len(torrents))
-	c.JSON(http.StatusOK, &gin.H{"message": "ok", "torrents": torrents})
+	c.JSON(http.StatusOK, &gin.H{"message": "ok", "total": len(torrents), "data": torrents})
 }
 
 func (w *WebServer) SearchByProvider(c *gin.Context) {
@@ -67,5 +67,5 @@ func (w *WebServer) SearchByProvider(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, &gin.H{"message": "error", "error": err})
 	}
 	w.logger.Info().Msgf("resolved %d torrents for provider: %s", len(torrents), provider)
-	c.JSON(http.StatusOK, &gin.H{"message": "ok", "torrents": torrents})
+	c.JSON(http.StatusOK, &gin.H{"message": "ok", "total": len(torrents), "data": torrents})
 }
