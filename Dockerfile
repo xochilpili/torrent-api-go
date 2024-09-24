@@ -12,6 +12,6 @@ RUN go build -tags musl -o /app/torrent-api cmd/main.go
 FROM alpine:3.19
 LABEL MAINTAINER="xochilpili <xochilpili@gmail.com>"
 RUN apk add --no-cache ca-certificates
-COPY --from=builder /app/torrent-api .
+COPY --from=builder /app/ ./app
 
-CMD ["./torrent-api"]
+CMD ["./app/torrent-api"]
