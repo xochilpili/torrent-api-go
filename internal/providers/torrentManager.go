@@ -56,7 +56,7 @@ func (p *TorrentManager) readConfigFile(file string) (*ProviderConfig, error) {
 }
 
 func (p *TorrentManager) loadProviderConfig(provider string) (*ProviderConfig, error) {
-	cfg, err := p.readConfigFile(fmt.Sprintf("./internal/providers/config/%s.json", provider))
+	cfg, err := p.readConfigFile(fmt.Sprintf("internal/providers/config/%s.json", provider))
 	if err != nil {
 		p.logger.Err(err).Msgf("error while getting provider %s config file: %v", provider, err)
 		return nil, err
