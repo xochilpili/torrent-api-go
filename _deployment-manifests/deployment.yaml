@@ -1,0 +1,44 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: torrent-api
+  labels:
+    app: torrent-api
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: torrent-api
+  template:
+    metadata:
+      labels:
+        app: torrent-api
+    spec:
+      containers:
+      - name: torrent-api
+        image: registry.paranoids.us/torrent-api:main
+        imagePullPolicy: Always
+        env:
+          - name: TAG_HOST
+            value: 0.0.0.0
+          - name: TAG_PORT
+            value: "4001"
+
+        ports:
+        - containerPort: 4001
+      imagePullSecrets:
+      - name: regcred
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: torrent-api-svc
+spec:
+  selector:
+    app: torrent-api
+  type: ClusterIP
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 4001
