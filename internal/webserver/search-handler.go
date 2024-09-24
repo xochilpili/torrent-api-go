@@ -36,6 +36,7 @@ func (w *WebServer) SearchAll(c *gin.Context) {
 	if err != nil {
 		w.logger.Err(err).Msgf("error while fetching torrents: %v", err)
 		c.JSON(http.StatusInternalServerError, &gin.H{"message": "error", "error": err})
+		return
 	}
 	w.logger.Info().Msgf("resolved %d torrents", len(torrents))
 	c.JSON(http.StatusOK, &gin.H{"message": "ok", "total": len(torrents), "data": torrents})
@@ -70,6 +71,7 @@ func (w *WebServer) SearchByProvider(c *gin.Context) {
 	if err != nil {
 		w.logger.Err(err).Msgf("error while fetching torrents: %v", err)
 		c.JSON(http.StatusInternalServerError, &gin.H{"message": "error", "error": err})
+		return
 	}
 	w.logger.Info().Msgf("resolved %d torrents for provider: %s", len(torrents), provider)
 	c.JSON(http.StatusOK, &gin.H{"message": "ok", "total": len(torrents), "data": torrents})
