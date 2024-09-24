@@ -17,7 +17,7 @@ spec:
     spec:
       containers:
       - name: torrent-api
-        image: registry.paranoids.us/torrent-api:main
+        image: registry.paranoids.us/torrent-api:v1.0.0
         imagePullPolicy: Always
         env:
           - name: TAG_HOST
