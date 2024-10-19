@@ -3,11 +3,14 @@ module github.com/xochilpili/torrent-api-go
 go 1.21.1
 
 require (
+	github.com/gin-contrib/logger v1.1.2
+	github.com/gin-gonic/gin v1.10.0
 	github.com/go-resty/resty/v2 v2.15.1
 	github.com/gocolly/colly/v2 v2.1.0
 	github.com/joho/godotenv v1.5.1
 	github.com/kelseyhightower/envconfig v1.4.0
 	github.com/rs/zerolog v1.33.0
+	github.com/xochilpili/go-parse-torrent-name v0.0.0-20241019051020-0c4cd3c0e036
 )
 
 require (
@@ -21,9 +24,7 @@ require (
 	github.com/cloudwego/base64x v0.1.4 // indirect
 	github.com/cloudwego/iasm v0.2.0 // indirect
 	github.com/gabriel-vasile/mimetype v1.4.3 // indirect
-	github.com/gin-contrib/logger v1.1.2 // indirect
 	github.com/gin-contrib/sse v0.1.0 // indirect
-	github.com/gin-gonic/gin v1.10.0 // indirect
 	github.com/go-playground/locales v0.14.1 // indirect
 	github.com/go-playground/universal-translator v0.18.1 // indirect
 	github.com/go-playground/validator/v10 v10.20.0 // indirect
@@ -34,10 +35,10 @@ require (
 	github.com/json-iterator/go v1.1.12 // indirect
 	github.com/kennygrant/sanitize v1.2.4 // indirect
 	github.com/klauspost/cpuid/v2 v2.2.7 // indirect
+	github.com/kr/text v0.2.0 // indirect
 	github.com/leodido/go-urn v1.4.0 // indirect
 	github.com/mattn/go-colorable v0.1.13 // indirect
 	github.com/mattn/go-isatty v0.0.20 // indirect
-	github.com/middelink/go-parse-torrent-name v0.0.0-20190301154245-3ff4efacd4c4 // indirect
 	github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd // indirect
 	github.com/modern-go/reflect2 v1.0.2 // indirect
 	github.com/pelletier/go-toml/v2 v2.2.2 // indirect

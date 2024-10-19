@@ -13,8 +13,8 @@ import (
 
 	"github.com/go-resty/resty/v2"
 	"github.com/gocolly/colly/v2"
-	parsetorrentname "github.com/middelink/go-parse-torrent-name"
 	"github.com/rs/zerolog"
+	parsetorrentname "github.com/xochilpili/go-parse-torrent-name"
 )
 
 type TorrentProvider struct {
@@ -73,7 +73,8 @@ func (t *TorrentProvider) fetchByScrappe(ctx context.Context, params SearchParam
 
 		info, err := t.parseTorrentTitle(parsedTitle)
 		if err != nil {
-			t.logger.Panic().Err(err).Msg("Title parser error")
+			//t.logger.Panic().Err(err).Msg("Title parser error")
+			t.logger.Err(err).Msg("error parsing title")
 		}
 
 		itemType := "movie"
@@ -188,6 +189,10 @@ func (t *TorrentProvider) transform2Item(data []byte) ([]*TorrentItem, error) {
 			info, err := t.parseTorrentTitle(el.Name)
 			if err != nil {
 				return nil, err
+			}
+
+			if info.Title == "" {
+				continue
 			}
 
 			itemType := "movie"
