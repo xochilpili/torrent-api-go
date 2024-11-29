@@ -188,6 +188,10 @@ func (p *TorrentManager) postFilter(items []*Torrent, params SearchParams) []*To
 			continue
 		}
 
+		if strings.EqualFold(item.Quality, "HDCAM") {
+			continue
+		}
+
 		switch item.Type {
 		case "movie":
 			if sizeInBytes < minSize || sizeInBytes > maxSize {
