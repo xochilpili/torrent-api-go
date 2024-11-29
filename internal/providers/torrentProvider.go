@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"net/url"
+	"regexp"
 	"strconv"
 	"strings"
 	"sync"
@@ -68,7 +69,7 @@ func (t *TorrentProvider) fetchByScrappe(ctx context.Context, params SearchParam
 		strSeeds := h.ChildText(t.config.ItemsSelector.Seeds)
 		strPeers := h.ChildText(t.config.ItemsSelector.Peers)
 		size := h.ChildText(t.config.ItemsSelector.Size)
-
+		
 		parsedTitle := strings.ReplaceAll(title, " ", "-")
 
 		info, err := t.parseTorrentTitle(parsedTitle)
@@ -100,11 +101,13 @@ func (t *TorrentProvider) fetchByScrappe(ctx context.Context, params SearchParam
 			Seeds:      seeds,
 			Peers:      peers,
 		}
-
+		parsedTitle = strings.Trim(strings.ReplaceAll(info.Title, "-", " "), " ")
+		re := regexp.MustCompile(`\(|\[`)
+		parsedTitle = strings.TrimSpace(re.ReplaceAllString(parsedTitle, ""))
 		item := &TorrentItem{
 			Provider:      t.config.Name,
 			Type:          itemType,
-			Title:         strings.Trim(strings.ReplaceAll(info.Title, "-", " "), " "),
+			Title:         parsedTitle,
 			OriginalTitle: title,
 			Year:          info.Year,
 			Group:         strings.ToLower(info.Group),
@@ -210,9 +213,13 @@ func (t *TorrentProvider) transform2Item(data []byte) ([]*TorrentItem, error) {
 				seeds = 0
 			}
 
+			parsedTitle := strings.Trim(strings.ReplaceAll(info.Title, "-", " "), " ")
+			re := regexp.MustCompile(`\(|\[`)
+			parsedTitle = strings.TrimSpace(re.ReplaceAllString(parsedTitle, ""))
+
 			item := &TorrentItem{
 				Provider:      t.config.Name,
-				Title:         info.Title,
+				Title:         parsedTitle,
 				OriginalTitle: el.Name,
 				Type:          itemType,
 				Year:          info.Year,

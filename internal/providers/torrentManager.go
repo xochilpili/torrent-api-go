@@ -115,10 +115,10 @@ func (p *TorrentManager) FetchAllActive(ctx context.Context, params SearchParams
 	for _, conf := range cfg {
 		wg.Add(1)
 		go func(ctx context.Context, conf *ProviderConfig, params SearchParams) {
+			defer wg.Done()
 			provider := NewTorrentProvider(conf, p.logger)
 			torrents := provider.FetchAndParse(ctx, params)
 			items = append(items, torrents...)
-			wg.Done()
 		}(ctx, conf, params)
 	}
 	wg.Wait()
