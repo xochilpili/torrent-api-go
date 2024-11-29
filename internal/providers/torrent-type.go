@@ -1,8 +1,11 @@
 package providers
 
 type ParamFilters struct {
+	Title      string
 	Group      string
 	Resolution string
+	Season     int
+	Episode    int
 }
 type SearchParams struct {
 	Query   string
@@ -10,25 +13,21 @@ type SearchParams struct {
 }
 
 type Torrent struct {
-	Resolution string `json:"resolution"`
-	Codec      string `json:"codec,omitempty"`
-	Quality    string `json:"quality"`
-	Seeds      int    `json:"seeds"`
-	Peers      int    `json:"peers"`
-	Size       string `json:"size"`
-	Magnet     string `json:"magnet"`
-}
-
-type TorrentItem struct {
-	Provider      string    `json:"provider"`
-	Type          string    `json:"type"`
-	Title         string    `json:"title"`
-	OriginalTitle string    `json:"original_title"`
-	Year          int       `json:"year"`
-	Group         string    `json:"group"`
-	Torrents      []Torrent `json:"torrents"`
-	Season        int       `json:"season,omitempty"`
-	Episode       int       `json:"episode,omitempty"`
+	Provider      string `json:"provider"`
+	Type          string `json:"type"`
+	Title         string `json:"title"`
+	OriginalTitle string `json:"original_title"`
+	Year          int    `json:"year"`
+	Group         string `json:"group"`
+	Resolution    string `json:"resolution"`
+	Codec         string `json:"codec,omitempty"`
+	Quality       string `json:"quality"`
+	Seeds         int    `json:"seeds"`
+	Peers         int    `json:"peers"`
+	Size          string `json:"size"`
+	Season        int    `json:"season,omitempty"`
+	Episode       int    `json:"episode,omitempty"`
+	Magnet        string `json:"magnet"`
 }
 
 type TPBItem struct {

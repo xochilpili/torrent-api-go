@@ -6,11 +6,17 @@ import (
 	"strings"
 
 	"github.com/gin-gonic/gin"
+	parsetorrentname "github.com/xochilpili/go-parse-torrent-name"
 	"github.com/xochilpili/torrent-api-go/internal/providers"
 )
 
 func (w *WebServer) SearchAll(c *gin.Context) {
 	query := c.Query("term")
+	if query == "" {
+		c.JSON(http.StatusBadRequest, &gin.H{"message": "error", "error": "bad request"})
+		return
+	}
+	info, _ := parsetorrentname.Parse(query)
 	queryString := url.PathEscape(query)
 	res := c.Query("res")
 	group := c.Query("group")
@@ -18,8 +24,11 @@ func (w *WebServer) SearchAll(c *gin.Context) {
 	params := providers.SearchParams{
 		Query: queryString,
 		Filters: providers.ParamFilters{
+			Title:      info.Title,
 			Resolution: "",
 			Group:      "",
+			Season:     info.Season,
+			Episode:    info.Episode,
 		},
 	}
 
@@ -44,7 +53,17 @@ func (w *WebServer) SearchAll(c *gin.Context) {
 
 func (w *WebServer) SearchByProvider(c *gin.Context) {
 	provider := c.Param("provider")
+	if provider == "" {
+		c.JSON(http.StatusBadRequest, &gin.H{"message": "error", "error": "bad request"})
+		return
+	}
+
 	query := c.Query("term")
+	if query == "" {
+		c.JSON(http.StatusBadRequest, &gin.H{"message": "error", "error": "bad request"})
+		return
+	}
+	info, _ := parsetorrentname.Parse(query)
 	queryString := url.PathEscape(query)
 	res := c.Query("res")
 	group := c.Query("group")
@@ -52,8 +71,11 @@ func (w *WebServer) SearchByProvider(c *gin.Context) {
 	params := providers.SearchParams{
 		Query: queryString,
 		Filters: providers.ParamFilters{
+			Title:      info.Title,
 			Resolution: "",
 			Group:      "",
+			Season:     info.Season,
+			Episode:    info.Episode,
 		},
 	}
 

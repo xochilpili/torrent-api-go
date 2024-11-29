@@ -7,6 +7,7 @@ import (
 	"io/fs"
 	"os"
 	"path/filepath"
+	"sort"
 	"strings"
 	"sync"
 
@@ -105,8 +106,8 @@ func (p *TorrentManager) GetActiveProviders() ([]*ProviderConfig, error) {
 	return config, nil
 }
 
-func (p *TorrentManager) FetchAllActive(ctx context.Context, params SearchParams) ([]*TorrentItem, error) {
-	var items []*TorrentItem
+func (p *TorrentManager) FetchAllActive(ctx context.Context, params SearchParams) ([]*Torrent, error) {
+	var items []*Torrent
 	cfg, err := p.GetActiveProviders()
 	if err != nil {
 		return nil, err
@@ -125,7 +126,7 @@ func (p *TorrentManager) FetchAllActive(ctx context.Context, params SearchParams
 	return p.postFilter(items, params), nil
 }
 
-func (p *TorrentManager) FetchByProvider(ctx context.Context, provider string, params SearchParams) ([]*TorrentItem, error) {
+func (p *TorrentManager) FetchByProvider(ctx context.Context, provider string, params SearchParams) ([]*Torrent, error) {
 
 	cfg, err := p.loadProviderConfig(provider)
 	if err != nil {
@@ -137,33 +138,84 @@ func (p *TorrentManager) FetchByProvider(ctx context.Context, provider string, p
 	return p.postFilter(torrents, params), nil
 }
 
-func (p *TorrentManager) postFilter(items []*TorrentItem, params SearchParams) []*TorrentItem {
-	var filtered []*TorrentItem
+func (p *TorrentManager) sizeToBytes(sizeStr string) (int64, error) {
+	sizeStr = strings.TrimSpace(sizeStr)
+	var size float64
+	var unit string
+
+	if _, err := fmt.Sscanf(sizeStr, "%f %s", &size, &unit); err != nil {
+		return 0, err
+	}
+
+	switch strings.ToUpper(unit) {
+	case "GB":
+		return int64(size * 1024 * 1024 * 1024), nil // convert gb to bytez
+	case "MB":
+		return int64(size * 1024 * 1024), nil // convert mb to bytez
+	case "KB":
+		return int64(size * 1024), nil // convert kb to bytez
+	case "B":
+		return int64(size), nil
+	default:
+		return 0, fmt.Errorf("invalid unit %s", unit)
+	}
+}
+
+func (p *TorrentManager) postFilter(items []*Torrent, params SearchParams) []*Torrent {
+	var filtered []*Torrent
 	p.logger.Info().Msgf("Total items received to be filtered: %d", len(items))
+	minSize, _ := p.sizeToBytes("700 MB")
+	maxSize, _ := p.sizeToBytes("3 GB")
+	minSerieSize, _ := p.sizeToBytes("250 MB")
+	maxSerieSize, _ := p.sizeToBytes("1.5 GB")
+
+	// filtering by params and size (default)
 	for _, item := range items {
+		sizeInBytes, err := p.sizeToBytes(item.Size)
+		if err != nil {
+			p.logger.Info().Msgf("error while casting size: %s, item: %s", err.Error(), item.Title)
+			continue
+		}
+		if params.Filters.Resolution != "" && !strings.Contains(strings.ToLower(item.Resolution), strings.ToLower(params.Filters.Resolution)) {
+			continue
+		}
 
 		if params.Filters.Group != "" && !strings.Contains(item.Group, params.Filters.Group) && !strings.Contains(strings.ToLower(item.OriginalTitle), params.Filters.Group) {
-			fmt.Printf("Filtering didn't match: %s, %s, %s\n", params.Filters.Group, item.Group, item.OriginalTitle)
 			continue
 		}
 
-		if params.Filters.Resolution == "" {
-			filtered = append(filtered, item)
+		if !strings.EqualFold(item.Title, params.Filters.Title) || strings.EqualFold(item.OriginalTitle, params.Filters.Title) {
 			continue
 		}
 
-		var torrents []Torrent
-		for _, torrent := range item.Torrents {
-			if strings.Contains(strings.ToLower(torrent.Resolution), strings.ToLower(params.Filters.Resolution)) {
-				torrents = append(torrents, torrent)
+		switch item.Type {
+		case "movie":
+			if sizeInBytes < minSize || sizeInBytes > maxSize {
+				continue
+			}
+
+		case "serie":
+			if sizeInBytes < minSerieSize || sizeInBytes > maxSerieSize {
+				continue
+			}
+			if item.Season != params.Filters.Season && item.Episode != params.Filters.Episode {
+				continue
 			}
 		}
 
-		if len(torrents) > 0 {
-			item.Torrents = torrents
-			filtered = append(filtered, item)
-		}
+		filtered = append(filtered, item)
 	}
+
+	// sort by size
+	sort.Slice(filtered, func(i, j int) bool {
+		sizeI, errI := p.sizeToBytes(filtered[i].Size)
+		sizeJ, errJ := p.sizeToBytes(filtered[j].Size)
+		if errI != nil || errJ != nil {
+			return false
+		}
+		return sizeI < sizeJ
+	})
+
 	p.logger.Info().Msgf("Total filtered: %d", len(filtered))
 	return filtered
 }
