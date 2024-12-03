@@ -93,6 +93,7 @@ func (t *TorrentProvider) fetchByScrappe(ctx context.Context, params SearchParam
 		parsedTitle = strings.Trim(strings.ReplaceAll(info.Title, "-", " "), " ")
 		re := regexp.MustCompile(`\(|\[`)
 		parsedTitle = strings.TrimSpace(re.ReplaceAllString(parsedTitle, ""))
+		group := strings.TrimSpace(re.ReplaceAllString(info.Group, ""))
 
 		torrent := Torrent{
 			Provider:      t.config.Name,
@@ -105,7 +106,7 @@ func (t *TorrentProvider) fetchByScrappe(ctx context.Context, params SearchParam
 			Size:          size,
 			Seeds:         seeds,
 			Peers:         peers,
-			Group:         strings.ToLower(info.Group),
+			Group:         strings.ToLower(group),
 			Season:        info.Season,
 			Episode:       info.Episode,
 		}
@@ -212,7 +213,7 @@ func (t *TorrentProvider) transform2Item(data []byte) ([]*Torrent, error) {
 			parsedTitle := strings.Trim(strings.ReplaceAll(info.Title, "-", " "), " ")
 			re := regexp.MustCompile(`\(|\[`)
 			parsedTitle = strings.TrimSpace(re.ReplaceAllString(parsedTitle, ""))
-
+			group := strings.TrimSpace(re.ReplaceAllString(info.Group, ""))
 			item := &Torrent{
 				Provider:      t.config.Name,
 				Title:         parsedTitle,
@@ -225,7 +226,7 @@ func (t *TorrentProvider) transform2Item(data []byte) ([]*Torrent, error) {
 				Peers:         peers,
 				Size:          t.formatSize(el.Size),
 				Year:          info.Year,
-				Group:         strings.ToLower(info.Group),
+				Group:         strings.ToLower(group),
 				Episode:       info.Episode,
 				Season:        info.Season,
 				Magnet:        t.formatMagnet(el.InfoHash, el.Name),
