@@ -177,32 +177,39 @@ func (p *TorrentManager) postFilter(items []*Torrent, params SearchParams) []*To
 			continue
 		}
 		if params.Filters.Resolution != "" && !strings.Contains(strings.ToLower(item.Resolution), strings.ToLower(params.Filters.Resolution)) {
+			p.logger.Info().Msgf("skipping %s no resolution matched with %s", item.Title, params.Filters.Resolution)
 			continue
 		}
 
 		if params.Filters.Group != "" && !strings.Contains(item.Group, params.Filters.Group) && !strings.Contains(strings.ToLower(item.OriginalTitle), params.Filters.Group) {
+			p.logger.Info().Msgf("skipping %s no group matched with %s", item.Title, params.Filters.Group)
 			continue
 		}
 
-		if !strings.EqualFold(item.Title, params.Filters.Title) || strings.EqualFold(item.OriginalTitle, params.Filters.Title) {
+		if !strings.EqualFold(item.Title, params.Filters.Title) && !strings.EqualFold(item.OriginalTitle, params.Filters.Title) {
+			p.logger.Info().Msgf("skipping %s no title matched with %s", item.Title, params.Filters.Title)
 			continue
 		}
 
 		if strings.EqualFold(item.Quality, "HDCAM") {
+			p.logger.Info().Msgf("skipping %s found hdcam", item.Title)
 			continue
 		}
 
 		switch item.Type {
 		case "movie":
 			if sizeInBytes < minSize || sizeInBytes > maxSize {
+				p.logger.Info().Msgf("skipping %s no size matched", item.Size)
 				continue
 			}
 
 		case "serie":
 			if sizeInBytes < minSerieSize || sizeInBytes > maxSerieSize {
+				p.logger.Info().Msgf("skipping %s no size matched", item.Size)
 				continue
 			}
 			if item.Season != params.Filters.Season && item.Episode != params.Filters.Episode {
+				p.logger.Info().Msgf("skipping %s no season or episode matched", item.Size)
 				continue
 			}
 		}
@@ -218,6 +225,13 @@ func (p *TorrentManager) postFilter(items []*Torrent, params SearchParams) []*To
 			return false
 		}
 		return sizeI < sizeJ
+	})
+
+	// sort by seeds
+	sort.Slice(filtered, func(i, j int) bool {
+		seedsI := filtered[i].Seeds
+		seedsJ := filtered[j].Seeds
+		return seedsI > seedsJ
 	})
 
 	p.logger.Info().Msgf("Total filtered: %d", len(filtered))

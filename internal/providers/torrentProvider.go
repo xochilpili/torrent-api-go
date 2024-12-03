@@ -164,12 +164,14 @@ func (t *TorrentProvider) fetchByApi(ctx context.Context, params SearchParams) [
 
 	resp, err := t.rs.R().SetHeader("Content-Type", "application/json").SetContext(ctx).Get(baseUrl)
 	if err != nil {
-		t.logger.Panic().Err(err).Msgf("error while fetching: %s, %v", baseUrl, err)
+		t.logger.Err(err).Msgf("error while fetching: %s, %v", baseUrl, err)
+		return nil
 	}
 
 	items, err := t.transform2Item(resp.Body())
 	if err != nil {
 		t.logger.Panic().Err(err).Msg("error while transform object types")
+		return nil
 	}
 
 	t.logger.Info().Msgf("Provider: %s, got %d results", t.config.Name, len(items))
