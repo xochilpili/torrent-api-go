@@ -91,7 +91,7 @@ func (t *TorrentProvider) fetchByScrappe(ctx context.Context, params SearchParam
 		}
 
 		parsedTitle = strings.Trim(strings.ReplaceAll(info.Title, "-", " "), " ")
-		re := regexp.MustCompile(`\(|\[`)
+		re := regexp.MustCompile(`\(|\[|\]|\)`)
 		parsedTitle = strings.TrimSpace(re.ReplaceAllString(parsedTitle, ""))
 		group := strings.TrimSpace(re.ReplaceAllString(info.Group, ""))
 
@@ -211,7 +211,7 @@ func (t *TorrentProvider) transform2Item(data []byte) ([]*Torrent, error) {
 			}
 
 			parsedTitle := strings.Trim(strings.ReplaceAll(info.Title, "-", " "), " ")
-			re := regexp.MustCompile(`\(|\[`)
+			re := regexp.MustCompile(`\(|\[|\]|\)`)
 			parsedTitle = strings.TrimSpace(re.ReplaceAllString(parsedTitle, ""))
 			group := strings.TrimSpace(re.ReplaceAllString(info.Group, ""))
 			item := &Torrent{
